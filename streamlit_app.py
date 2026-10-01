@@ -1,5 +1,6 @@
 # Import python packages
 import streamlit as st
+import requests
 from snowflake.snowpark.functions import col
 
 # Write directly to the app
@@ -13,6 +14,7 @@ st.write('The name on your Smoothie will be:', name_on_order)
 # Connect to Snowflake
 cnx = st.connection("snowflake")
 session = cnx.session()
+session.sql("USE WAREHOUSE COMPUTE_WH").collect()
 
 # Get fruit options
 my_dataframe = session.table("smoothies.public.fruit_options").select(col('FRUIT_NAME'))
@@ -24,38 +26,23 @@ ingredients_list = st.multiselect(
     max_selections=5
 )
 
-# if ingredients_list:
-#     ingredients_string = ''
-    
-#     for fruit_chosen in ingredients_list:
-#         ingredients_string += fruit_chosen + ' '
-
-#     my_insert_stmt = f"""INSERT INTO smoothies.public.orders(ingredients, name_on_order)
-#                         VALUES ('{ingredients_string.strip()}', '{name_on_order}')"""
-
-#   #  Uncomment to debug - shows the exact SQL being run
-#     st.write(my_insert_stmt)
-
-#     if st.button('Submit Order'):
-#         session.sql(my_insert_stmt).collect()
-#         st.success(f'Your Smoothie is ordered, {name_on_order}!', icon="✅")
-
 if ingredients_list:
     ingredients_string = ''
     
     for fruit_chosen in ingredients_list:
         ingredients_string += fruit_chosen + ' '
 
+        # Call SmoothieFroot API for each fruit
+        smoothiefroot_response = requests.get(
+            f"https://my.smoothiefroot.com/api/fruit/{fruit_chosen}"
+        )
+        st.dataframe(
+            data=smoothiefroot_response.json(),
+            use_container_width=True
+        )
+
     my_insert_stmt = f"""INSERT INTO smoothies.public.orders(ingredients, name_on_order)
                         VALUES ('{ingredients_string.strip()}', '{name_on_order}')"""
-
-    st.write("SQL Statement:")
-    st.code(my_insert_stmt)
-
-# import requests  
-# smoothiefroot_response = requests.get("[https://my.smoothiefroot.com/api/fruit/watermelon](https://my.smoothiefroot.com/api/fruit/watermelon)")  
-# st.text(smoothiefroot_response.jason())
-# sf_df = st.dataframe(data=smoothiefroot_response.json(), use_container_width=True)
 
     if st.button('Submit Order'):
         try:
