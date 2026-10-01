@@ -17,12 +17,14 @@ session = cnx.session()
 session.sql("USE WAREHOUSE COMPUTE_WH").collect()
 
 # Get fruit options
-my_dataframe = session.table("smoothies.public.fruit_options").select(col('FRUIT_NAME'))
+# Get fruit options - now include SEARCH_ON column
+my_dataframe = session.table("smoothies.public.fruit_options") \
+    .select(col('FRUIT_NAME'), col('SEARCH_ON'))
 
 # Multi-select ingredients
 ingredients_list = st.multiselect(
     'Choose up to 5 ingredients:',
-    my_dataframe,
+    my_dataframe.select(col('FRUIT_NAME')),
     max_selections=5
 )
 
@@ -32,10 +34,17 @@ if ingredients_list:
     for fruit_chosen in ingredients_list:
         ingredients_string += fruit_chosen + ' '
 
-        # Call SmoothieFroot API for each fruit
+        # Get the SEARCH_ON value for this fruit
+        search_on_value = session.table("smoothies.public.fruit_options") \
+            .filter(col('FRUIT_NAME') == fruit_chosen) \
+            .select(col('SEARCH_ON')) \
+            .collect()[0]['SEARCH_ON']
+
+        # Use SEARCH_ON in the API call
         smoothiefroot_response = requests.get(
-            f"https://my.smoothiefroot.com/api/fruit/{fruit_chosen}"
+            f"https://my.smoothiefroot.com/api/fruit/{search_on_value}"
         )
+        st.subheader(f"{fruit_chosen} Nutrition Info:")
         st.dataframe(
             data=smoothiefroot_response.json(),
             use_container_width=True
@@ -50,6 +59,4 @@ if ingredients_list:
             st.success(f'Your Smoothie is ordered, {name_on_order}!', icon="✅")
         except Exception as e:
             st.error(f"Error details: {e}")
-
-
     
