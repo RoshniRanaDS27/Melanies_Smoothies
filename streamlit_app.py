@@ -33,8 +33,8 @@ if ingredients_list:
     my_insert_stmt = f"""INSERT INTO smoothies.public.orders(ingredients, name_on_order)
                         VALUES ('{ingredients_string.strip()}', '{name_on_order}')"""
 
-    # Uncomment to debug - shows the exact SQL being run
-    # st.write(my_insert_stmt)
+  #  Uncomment to debug - shows the exact SQL being run
+    st.write(my_insert_stmt)
 
     if st.button('Submit Order'):
         session.sql(my_insert_stmt).collect()
