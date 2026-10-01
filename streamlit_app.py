@@ -16,10 +16,12 @@ cnx = st.connection("snowflake")
 session = cnx.session()
 session.sql("USE WAREHOUSE COMPUTE_WH").collect()
 
-# Get fruit options
-# Get fruit options - now include SEARCH_ON column
+# Get fruit options with SEARCH_ON column
 my_dataframe = session.table("smoothies.public.fruit_options") \
     .select(col('FRUIT_NAME'), col('SEARCH_ON'))
+
+# Convert the Snowpark Dataframe to a Pandas Dataframe so we can use the LOC function
+pd_df = my_dataframe.to_pandas()
 
 # Multi-select ingredients
 ingredients_list = st.multiselect(
@@ -33,18 +35,17 @@ if ingredients_list:
     
     for fruit_chosen in ingredients_list:
         ingredients_string += fruit_chosen + ' '
-
-        # Get the SEARCH_ON value for this fruit
-        search_on_value = session.table("smoothies.public.fruit_options") \
-            .filter(col('FRUIT_NAME') == fruit_chosen) \
-            .select(col('SEARCH_ON')) \
-            .collect()[0]['SEARCH_ON']
-
+        
+        # Use LOC to find the SEARCH_ON value for the chosen fruit
+        search_on = pd_df.loc[pd_df['FRUIT_NAME'] == fruit_chosen, 'SEARCH_ON'].iloc[0]
+        
+        st.write('The search value for ', fruit_chosen, ' is ', search_on, '.')
+        
         # Use SEARCH_ON in the API call
+        st.subheader(fruit_chosen + ' Nutrition Information')
         smoothiefroot_response = requests.get(
-            f"https://my.smoothiefroot.com/api/fruit/{search_on_value}"
+            f"https://my.smoothiefroot.com/api/fruit/{search_on}"
         )
-        st.subheader(f"{fruit_chosen} Nutrition Info:")
         st.dataframe(
             data=smoothiefroot_response.json(),
             use_container_width=True
@@ -59,4 +60,3 @@ if ingredients_list:
             st.success(f'Your Smoothie is ordered, {name_on_order}!', icon="✅")
         except Exception as e:
             st.error(f"Error details: {e}")
-    
