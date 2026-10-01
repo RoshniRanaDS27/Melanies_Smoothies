@@ -24,6 +24,22 @@ ingredients_list = st.multiselect(
     max_selections=5
 )
 
+# if ingredients_list:
+#     ingredients_string = ''
+    
+#     for fruit_chosen in ingredients_list:
+#         ingredients_string += fruit_chosen + ' '
+
+#     my_insert_stmt = f"""INSERT INTO smoothies.public.orders(ingredients, name_on_order)
+#                         VALUES ('{ingredients_string.strip()}', '{name_on_order}')"""
+
+#   #  Uncomment to debug - shows the exact SQL being run
+#     st.write(my_insert_stmt)
+
+#     if st.button('Submit Order'):
+#         session.sql(my_insert_stmt).collect()
+#         st.success(f'Your Smoothie is ordered, {name_on_order}!', icon="✅")
+
 if ingredients_list:
     ingredients_string = ''
     
@@ -33,13 +49,13 @@ if ingredients_list:
     my_insert_stmt = f"""INSERT INTO smoothies.public.orders(ingredients, name_on_order)
                         VALUES ('{ingredients_string.strip()}', '{name_on_order}')"""
 
-  #  Uncomment to debug - shows the exact SQL being run
-    st.write(my_insert_stmt)
+    st.write("SQL Statement:")
+    st.code(my_insert_stmt)
 
     if st.button('Submit Order'):
-        session.sql(my_insert_stmt).collect()
-        st.success(f'Your Smoothie is ordered, {name_on_order}!', icon="✅")
-
-
-    
+        try:
+            session.sql(my_insert_stmt).collect()
+            st.success(f'Your Smoothie is ordered, {name_on_order}!', icon="✅")
+        except Exception as e:
+            st.error(f"Error details: {e}")
     
