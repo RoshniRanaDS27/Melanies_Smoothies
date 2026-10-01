@@ -52,6 +52,11 @@ if ingredients_list:
     st.write("SQL Statement:")
     st.code(my_insert_stmt)
 
+import requests  
+smoothiefroot_response = requests.get("[https://my.smoothiefroot.com/api/fruit/watermelon](https://my.smoothiefroot.com/api/fruit/watermelon)")  
+st.text(smoothiefroot_response.jason())
+sf_df = st.dataframe(data=smoothiefroot_response.json(), use_container_width=True)
+
     if st.button('Submit Order'):
         try:
             session.sql(my_insert_stmt).collect()
